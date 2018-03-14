@@ -7,7 +7,24 @@ from os import path
 import time
 import sys
 
+def check_url_location(url):
+	while True:
+		res = requests.head(url)
+		if not 'Location' in res.headers:
+			return url
+		url = res.headers['Location']
+
 def get_filename_from_url(url):
+	res = requests.head(url)
+	if 'Content-disposition' in res.headers:
+		infos = res.headers['Content-disposition']
+		info_list = infos.split(';')
+		for info in info_list:
+			info = info.strip()
+			if info.startswith('filename'):
+				file_name = info.split('=')[1].strip()
+				file_name = file_name.strip('"')
+				break
 	file_path = parse.urlparse(url).path
 	file_name = path.basename(file_path)
 	return file_name
@@ -104,6 +121,9 @@ tm = 0
 def download_file(url, thread_num):
 	global download_size
 	global tm
+
+	url = check_url_location(url)
+
 	file_name = get_filename_from_url(url)
 	if file_name == '':
 		file_name = 'Unknown'
